@@ -1,0 +1,366 @@
+{
+  "info": {
+    "name": "pagoya-api",
+    "description": "Coleccion Postman para PagoYa API - Buenas practicas (DTOs, validacion, paginacion, manejo central de errores y reportes analiticos).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b1f7e2c0-9d3a-4f1e-9a2b-pagoya0000001"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "customer_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "account_number",
+      "value": "ACC-001",
+      "type": "string"
+    },
+    {
+      "key": "target_account_number",
+      "value": "ACC-002",
+      "type": "string"
+    },
+    {
+      "key": "page",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "size",
+      "value": "10",
+      "type": "string"
+    },
+    {
+      "key": "report_from",
+      "value": "2026-04-01",
+      "type": "string"
+    },
+    {
+      "key": "report_to",
+      "value": "2026-04-25",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "auth",
+      "description": "Endpoints de autenticacion y registro de usuarios (RegisterUserRequest valida email + password)",
+      "item": [
+        {
+          "name": "register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana@pagoya.pe\",\n  \"password\": \"12345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "POST /api/auth/register. Body validado por RegisterUserRequest. Devuelve UserResponse (id, email, verified, role)."
+          }
+        },
+        {
+          "name": "register (validacion fallida)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"correo-malo\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Caso negativo: email invalido y password corto. Retorna 400 con ErrorResponse y details."
+          }
+        }
+      ]
+    },
+    {
+      "name": "customers",
+      "description": "Gestion de clientes (CreateCustomerRequest validado, listado paginado)",
+      "item": [
+        {
+          "name": "create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ana Torres\",\n  \"dni\": \"12345678\",\n  \"phone\": \"987654321\",\n  \"userId\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers"]
+            },
+            "description": "POST /api/customers. CreateCustomerRequest valida fullName, dni (8 digitos), phone (9 digitos), userId. Devuelve CustomerResponse."
+          }
+        },
+        {
+          "name": "find by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/customers/{{customer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers", "{{customer_id}}"]
+            },
+            "description": "GET /api/customers/{id}. Si no existe, 404 con ErrorResponse."
+          }
+        },
+        {
+          "name": "find all (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/customers?page={{page}}&size={{size}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customers"],
+              "query": [
+                { "key": "page", "value": "{{page}}" },
+                { "key": "size", "value": "{{size}}" }
+              ]
+            },
+            "description": "GET /api/customers?page=0&size=10. Devuelve PageResponse<CustomerResponse> con content, page, size, totalElements, totalPages, first, last."
+          }
+        }
+      ]
+    },
+    {
+      "name": "accounts",
+      "description": "Gestion de cuentas digitales (CreateAccountRequest, balance, listado paginado, reporte)",
+      "item": [
+        {
+          "name": "create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SAVINGS\",\n  \"customerId\": {{customer_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts"]
+            },
+            "description": "POST /api/accounts. type: SAVINGS | CHECKING. Servidor genera accountNumber, balance=0 y status=ACTIVE."
+          }
+        },
+        {
+          "name": "create target account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CHECKING\",\n  \"customerId\": {{customer_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts"]
+            },
+            "description": "Crea una segunda cuenta para probar transferencias."
+          }
+        },
+        {
+          "name": "get balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/accounts/{{account_number}}/balance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts", "{{account_number}}", "balance"]
+            },
+            "description": "GET /api/accounts/{accountNumber}/balance. Devuelve AccountBalanceResponse (accountNumber, balance)."
+          }
+        },
+        {
+          "name": "find by customer (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/accounts/customer/{{customer_id}}?page={{page}}&size={{size}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts", "customer", "{{customer_id}}"],
+              "query": [
+                { "key": "page", "value": "{{page}}" },
+                { "key": "size", "value": "{{size}}" }
+              ]
+            },
+            "description": "GET /api/accounts/customer/{customerId}?page=0&size=10. Devuelve PageResponse<AccountResponse>."
+          }
+        },
+        {
+          "name": "report - summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/accounts/reports/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts", "reports", "summary"]
+            },
+            "description": "GET /api/accounts/reports/summary. Cuentas agrupadas por tipo y estado con saldo total (alimenta dashboard)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "transfers",
+      "description": "Transferencias entre cuentas (TransferRequest validado, listado paginado, reportes)",
+      "item": [
+        {
+          "name": "transfer (PEN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{account_number}}\",\n  \"targetAccountNumber\": \"{{target_account_number}}\",\n  \"amount\": 200.00,\n  \"currency\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transfers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers"]
+            },
+            "description": "POST /api/transfers en soles. TransferRequest valida sourceAccountNumber, targetAccountNumber, amount >= 1.00, currency (PEN|USD|EUR|GBP)."
+          }
+        },
+        {
+          "name": "transfer (USD)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{account_number}}\",\n  \"targetAccountNumber\": \"{{target_account_number}}\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transfers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers"]
+            },
+            "description": "Transferencia internacional. El servidor consulta tipo de cambio (Frankfurter) y aplica multiplicador."
+          }
+        },
+        {
+          "name": "transfer (validacion: monto minimo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{account_number}}\",\n  \"targetAccountNumber\": \"{{target_account_number}}\",\n  \"amount\": 0.50,\n  \"currency\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transfers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers"]
+            },
+            "description": "Caso negativo RN-09. Devuelve 400 con details: [amount: el monto minimo es S/. 1.00]."
+          }
+        },
+        {
+          "name": "find by account (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/transfers/account/{{account_number}}?page={{page}}&size={{size}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers", "account", "{{account_number}}"],
+              "query": [
+                { "key": "page", "value": "{{page}}" },
+                { "key": "size", "value": "{{size}}" }
+              ]
+            },
+            "description": "GET /api/transfers/account/{accountNumber}?page=0&size=10. Devuelve PageResponse<TransferResponse>."
+          }
+        },
+        {
+          "name": "report - by currency",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/transfers/reports/by-currency",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers", "reports", "by-currency"]
+            },
+            "description": "GET /api/transfers/reports/by-currency. Total y conteo por moneda (grafico de torta)."
+          }
+        },
+        {
+          "name": "report - by day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/transfers/reports/by-day?from={{report_from}}&to={{report_to}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers", "reports", "by-day"],
+              "query": [
+                { "key": "from", "value": "{{report_from}}" },
+                { "key": "to", "value": "{{report_to}}" }
+              ]
+            },
+            "description": "GET /api/transfers/reports/by-day?from=YYYY-MM-DD&to=YYYY-MM-DD. Transferencias por dia (grafico de lineas)."
+          }
+        },
+        {
+          "name": "report - by status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/transfers/reports/by-status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfers", "reports", "by-status"]
+            },
+            "description": "GET /api/transfers/reports/by-status. Distribucion PENDING/COMPLETED/FAILED."
+          }
+        }
+      ]
+    }
+  ]
+}
