@@ -1,3 +1,11 @@
+/*
+ * Grupo 2 - Ing Software
+ * Integrantes:
+ * - u202419995 Aguilar Anticona, Piero Antonio
+ * - u20191a851 Bustamante Cruzado, Raúl Tomás
+ * - u202311021 Saavedra Cervera, Sergio Andres
+ * - u202210236 Chipoco Mejia, Jorge Piero Jesus
+ */
 workspace "PagoYa API" "Plataforma Fintech de Pagos y Billetera Digital" {
     model {
         customer = person "Cliente PagoYa" "Un cliente de la plataforma que realiza pagos."
