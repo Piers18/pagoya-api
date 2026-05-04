@@ -1,0 +1,1001 @@
+openapi: 3.0.1
+info:
+  title: PagoYa API
+  description: API de la billetera digital PagoYa
+  contact:
+    name: Equipo PagoYa by HampCode
+    email: devacademyweb@gmail.com
+  version: v1
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+tags:
+- name: Auth
+  description: Registro y autenticacion de usuarios
+- name: Transfer Reports
+  description: Reportes agregados de transferencias
+- name: Transfers
+  description: Transferencias entre cuentas
+- name: Customers
+  description: Perfiles de cliente de PagoYa
+- name: Service Providers
+  description: Catalogo de proveedores de servicios
+- name: Bill Payments
+  description: Pagos de servicios del cliente
+- name: Accounts
+  description: Cuentas de los clientes
+- name: Recurring Bill Payments
+  description: Pagos recurrentes de servicios del cliente
+- name: Account Reports
+  description: Reportes agregados de cuentas
+paths:
+  /api/transfers:
+    post:
+      tags:
+      - Transfers
+      summary: Realizar una transferencia entre cuentas
+      operationId: transfer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+        required: true
+      responses:
+        "201":
+          description: Transferencia ejecutada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+        "404":
+          description: Cuenta origen o destino no encontrada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+        "400":
+          description: "Datos invalidos, saldo insuficiente o cuentas iguales"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+  /api/recurring-bill-payments:
+    post:
+      tags:
+      - Recurring Bill Payments
+      summary: Programar un pago recurrente
+      operationId: schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecurringPaymentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RecurringPaymentResponse"
+  /api/customers:
+    get:
+      tags:
+      - Customers
+      summary: Listar clientes paginados
+      operationId: findAll
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Lista paginada de clientes
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseCustomerResponse"
+    post:
+      tags:
+      - Customers
+      summary: Crear un perfil de cliente
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+        required: true
+      responses:
+        "201":
+          description: Cliente creado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Datos invalidos o DNI ya registrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+  /api/bill-payments:
+    post:
+      tags:
+      - Bill Payments
+      summary: Registrar un pago
+      operationId: pay
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBillPaymentRequest"
+        required: true
+      responses:
+        "404":
+          description: Cliente o proveedor no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BillPaymentResponse"
+        "201":
+          description: Pago registrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BillPaymentResponse"
+        "400":
+          description: Datos invalidos o pago duplicado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BillPaymentResponse"
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Registrar un nuevo usuario
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+        required: true
+      responses:
+        "201":
+          description: Usuario registrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Datos invalidos o email ya registrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+  /api/accounts:
+    post:
+      tags:
+      - Accounts
+      summary: Crear una cuenta para el cliente
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+        required: true
+      responses:
+        "201":
+          description: Cuenta creada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "400":
+          description: Datos invalidos o cuenta duplicada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+  /api/recurring-bill-payments/{id}/resume:
+    patch:
+      tags:
+      - Recurring Bill Payments
+      summary: Reanudar un pago recurrente
+      operationId: resume
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RecurringPaymentResponse"
+  /api/recurring-bill-payments/{id}/pause:
+    patch:
+      tags:
+      - Recurring Bill Payments
+      summary: Pausar un pago recurrente
+      operationId: pause
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RecurringPaymentResponse"
+  /api/transfers/reports/by-status:
+    get:
+      tags:
+      - Transfer Reports
+      summary: Distribucion por estado
+      operationId: byStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferByStatusReport"
+  /api/transfers/reports/by-day:
+    get:
+      tags:
+      - Transfer Reports
+      summary: Transferencias por dia (rango from-to)
+      operationId: byDay
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferByDayReport"
+  /api/transfers/reports/by-currency:
+    get:
+      tags:
+      - Transfer Reports
+      summary: Total transferido por moneda
+      operationId: byCurrency
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransferByCurrencyReport"
+  /api/transfers/account/{accountNumber}:
+    get:
+      tags:
+      - Transfers
+      summary: Listar transferencias por cuenta origen (paginado)
+      operationId: findByAccountNumber
+      parameters:
+      - name: accountNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Lista paginada de transferencias
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseTransferResponse"
+  /api/service-providers:
+    get:
+      tags:
+      - Service Providers
+      summary: Listar proveedores activos
+      operationId: findAll_1
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseServiceProviderResponse"
+  /api/recurring-bill-payments/customer/{customerId}:
+    get:
+      tags:
+      - Recurring Bill Payments
+      summary: Listar los pagos recurrentes del cliente
+      operationId: findByCustomer
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseRecurringPaymentResponse"
+  /api/customers/{id}:
+    get:
+      tags:
+      - Customers
+      summary: Obtener un cliente por id
+      operationId: findById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Cliente encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "404":
+          description: Cliente no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+  /api/bill-payments/customer/{customerId}:
+    get:
+      tags:
+      - Bill Payments
+      summary: Listar pagos de un cliente (paginado)
+      operationId: findByCustomer_1
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseBillPaymentResponse"
+        "404":
+          description: Cliente no encontrado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseBillPaymentResponse"
+  /api/bill-payments/customer/{customerId}/by-category:
+    get:
+      tags:
+      - Bill Payments
+      summary: Reporte de pagos por categoria
+      operationId: reportByCategory
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentByCategoryResponse"
+  /api/accounts/{accountNumber}/balance:
+    get:
+      tags:
+      - Accounts
+      summary: Consultar el saldo de una cuenta
+      operationId: getBalance
+      parameters:
+      - name: accountNumber
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "404":
+          description: Cuenta no encontrada
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountBalanceResponse"
+        "200":
+          description: Saldo entregado
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountBalanceResponse"
+  /api/accounts/reports/summary:
+    get:
+      tags:
+      - Account Reports
+      summary: Resumen de cuentas por tipo y estado
+      operationId: summary
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountSummaryReport"
+  /api/accounts/customer/{customerId}:
+    get:
+      tags:
+      - Accounts
+      summary: Listar cuentas de un cliente (paginado)
+      operationId: findByCustomer_2
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Lista paginada de cuentas
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseAccountResponse"
+  /api/recurring-bill-payments/{id}:
+    delete:
+      tags:
+      - Recurring Bill Payments
+      summary: Cancelar un pago recurrente
+      operationId: cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    TransferRequest:
+      required:
+      - amount
+      - currency
+      - sourceAccountNumber
+      - targetAccountNumber
+      type: object
+      properties:
+        sourceAccountNumber:
+          type: string
+        targetAccountNumber:
+          type: string
+        amount:
+          minimum: 1.00
+          exclusiveMinimum: false
+          type: number
+        currency:
+          pattern: PEN|USD|EUR|GBP
+          type: string
+    TransferResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        sourceAccountNumber:
+          type: string
+        targetAccountNumber:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        exchangeRate:
+          type: number
+        status:
+          type: string
+          enum:
+          - PENDING
+          - COMPLETED
+          - FAILED
+        createdAt:
+          type: string
+          format: date-time
+    CreateRecurringPaymentRequest:
+      required:
+      - amount
+      - billCode
+      - customerId
+      - frequency
+      - providerId
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int64
+        providerId:
+          type: integer
+          format: int64
+        billCode:
+          maxLength: 50
+          minLength: 0
+          type: string
+        amount:
+          maximum: 5000.00
+          exclusiveMaximum: false
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+        frequency:
+          type: string
+          enum:
+          - MONTHLY
+          - WEEKLY
+        dayOfMonth:
+          maximum: 28
+          minimum: 1
+          type: integer
+          format: int32
+        dayOfWeek:
+          maximum: 7
+          minimum: 1
+          type: integer
+          format: int32
+    RecurringPaymentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        providerName:
+          type: string
+        billCode:
+          type: string
+        amount:
+          type: number
+        frequency:
+          type: string
+        dayOfMonth:
+          type: integer
+          format: int32
+        dayOfWeek:
+          type: integer
+          format: int32
+        status:
+          type: string
+        nextRunAt:
+          type: string
+          format: date-time
+    CreateCustomerRequest:
+      required:
+      - dni
+      - fullName
+      - userId
+      type: object
+      properties:
+        fullName:
+          maxLength: 100
+          minLength: 0
+          type: string
+        dni:
+          pattern: "\\d{8}"
+          type: string
+        phone:
+          pattern: "\\d{9}"
+          type: string
+        userId:
+          type: integer
+          format: int64
+    CustomerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fullName:
+          type: string
+        dni:
+          type: string
+        phone:
+          type: string
+        userId:
+          type: integer
+          format: int64
+    CreateBillPaymentRequest:
+      required:
+      - amount
+      - billCode
+      - customerId
+      - providerId
+      type: object
+      properties:
+        customerId:
+          type: integer
+          format: int64
+        providerId:
+          type: integer
+          format: int64
+        billCode:
+          maxLength: 50
+          minLength: 0
+          type: string
+        amount:
+          maximum: 5000.00
+          exclusiveMaximum: false
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+    BillPaymentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        providerName:
+          type: string
+        billCode:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+    RegisterUserRequest:
+      required:
+      - email
+      - password
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          maxLength: 2147483647
+          minLength: 8
+          type: string
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        verified:
+          type: boolean
+        role:
+          type: string
+    CreateAccountRequest:
+      required:
+      - customerId
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - SAVINGS
+          - CHECKING
+        customerId:
+          type: integer
+          format: int64
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        accountNumber:
+          type: string
+        balance:
+          type: number
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - SUSPENDED
+          - CLOSED
+        type:
+          type: string
+          enum:
+          - SAVINGS
+          - CHECKING
+        customerId:
+          type: integer
+          format: int64
+    TransferByStatusReport:
+      type: object
+      properties:
+        status:
+          type: string
+        total:
+          type: integer
+          format: int64
+    TransferByDayReport:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        totalTransfers:
+          type: integer
+          format: int64
+        totalAmount:
+          type: number
+    TransferByCurrencyReport:
+      type: object
+      properties:
+        currency:
+          type: string
+        totalTransfers:
+          type: integer
+          format: int64
+        totalAmount:
+          type: number
+    Pageable:
+      type: object
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+        size:
+          minimum: 1
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            type: string
+    PageResponseTransferResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransferResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    PageResponseServiceProviderResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceProviderResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ServiceProviderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        category:
+          type: string
+    PageResponseRecurringPaymentResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecurringPaymentResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    PageResponseCustomerResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    PageResponseBillPaymentResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillPaymentResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    PaymentByCategoryResponse:
+      type: object
+      properties:
+        category:
+          type: string
+        totalCount:
+          type: integer
+          format: int64
+        totalAmount:
+          type: number
+    AccountBalanceResponse:
+      type: object
+      properties:
+        accountNumber:
+          type: string
+        balance:
+          type: number
+    AccountSummaryReport:
+      type: object
+      properties:
+        type:
+          type: string
+        status:
+          type: string
+        total:
+          type: integer
+          format: int64
+        totalBalance:
+          type: number
+    PageResponseAccountResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
